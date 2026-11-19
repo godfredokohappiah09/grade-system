@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Grade Management System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh; padding: 40px 20px; color: #2d3748;
+  }
+  .container {
+    max-width: 1000px; margin: 0 auto; background: #fff;
+    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    overflow: hidden;
+  }
+  header { background: #1a202c; color: #fff; padding: 28px 32px; }
+  header h1 { font-size: 1.6rem; letter-spacing: .5px; }
+  header p  { color: #a0aec0; margin-top: 6px; font-size: .9rem; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+    gap: 16px; padding: 24px 32px; background: #f7fafc;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .stat-card {
+    background: #fff; border-radius: 10px; padding: 16px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .stat-card .label {
+    font-size: .75rem; text-transform: uppercase;
+    color: #718096; letter-spacing: .5px;
+  }
+  .stat-card .value {
+    font-size: 1.5rem; font-weight: 700; margin-top: 4px;
+  }
+
+  .table-wrap { padding: 24px 32px 32px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th {
+    background: #edf2f7; text-align: left; padding: 12px 14px;
+    font-weight: 600; color: #4a5568; text-transform: uppercase;
+    font-size: .75rem; letter-spacing: .5px;
+    border-bottom: 2px solid #cbd5e0;
+  }
+  td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; }
+  tr:hover td { background: #f7fafc; }
+  td.num, th.num { text-align: center; }
+  td.num { font-variant-numeric: tabular-nums; }
+
+  .badge {
+    display: inline-block; padding: 4px 12px; border-radius: 20px;
+    font-weight: 700; font-size: .8rem; color: #fff;
+  }
+  .g-a { background: #38a169; }
+  .g-b { background: #3182ce; }
+  .g-c { background: #d69e2e; }
+  .g-d { background: #dd6b20; }
+  .g-f { background: #e53e3e; }
+
+  .top-row td { background: #f0fff4 !important; font-weight: 600; }
+  .star { color: #d69e2e; }
+  .empty { text-align: center; color: #a0aec0; padding: 24px; }
+
+  form {
+    padding: 24px 32px; background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+  }
+  form label {
+    display: flex; flex-direction: column; font-size: .75rem;
+    text-transform: uppercase; color: #718096; gap: 4px;
+  }
+  form input {
+    padding: 9px 12px; border: 1px solid #cbd5e0; border-radius: 8px;
+    font-size: .9rem; width: 130px;
+  }
+  form input[name=name] { width: 180px; }
+  form input:focus { outline: none; border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102,126,234,.15); }
+
+  .btn {
+    padding: 10px 22px; border: 0; border-radius: 8px;
+    background: #667eea; color: #fff; font-weight: 600; cursor: pointer;
+    font-size: .9rem;
+  }
+  .btn:hover { background: #5a67d8; }
+  .btn-danger { background: #e53e3e; }
+  .btn-danger:hover { background: #c53030; }
+  .btn-group { margin-left: auto; display: flex; gap: 8px; }
+
+  .search-bar {
+    padding: 16px 32px 0;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .search-bar input {
+    flex: 1; padding: 10px 14px; border: 1px solid #cbd5e0;
+    border-radius: 8px; font-size: .9rem;
+  }
+  .search-bar input:focus { outline: none; border-color: #667eea; }
+
+  footer {
+    text-align: center; padding: 16px; color: #a0aec0;
+    font-size: .8rem; background: #f7fafc;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>📊 Student Grade Management System</h1>
+    <p>Data stored in JavaScript arrays &bull; All in one HTML file</p>
+  </header>
+
+  <!-- Dashboard -->
+  <div class="stats" id="dashboard"></div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Search student by name..."
+           oninput="renderTable()">
+  </div>
+
+  <!-- Report table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th class="num">Math</th>
+          <th class="num">Science</th>
+          <th class="num">English</th>
+          <th class="num">Total</th>
+          <th class="num">Average</th>
+          <th class="num">Grade</th>
+          <th class="num">Action</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Add student form -->
+  <form id="addForm" onsubmit="addStudent(event)">
+    <label>Name
+      <input type="text" name="name" required>
+    </label>
+    <label>Math
+      <input type="number" name="math" min="0" max="100" required>
+    </label>
+    <label>Science
+      <input type="number" name="science" min="0" max="100" required>
+    </label>
+    <label>English
+      <input type="number" name="english" min="0" max="100" required>
+    </label>
+    <div class="btn-group">
+      <button type="submit" class="btn">+ Add Student</button>
+      <button type="button" class="btn btn-danger" onclick="clearAll()">Clear All</button>
+    </div>
+  </form>
+
+  <footer>Arrays: students[] · marks[][] · totals[] · averages[]</footer>
+</div>
+
+<script>
+// =====================================================================
+// 1. DATA STRUCTURE — arrays (as required)
+// =====================================================================
+const SUBJECTS = ["Math", "Science", "English"];
+const NUM_SUBJECTS = SUBJECTS.length;
+
+let students = [];   // array of { name, marks: [m1, m2, m3] }
+let totals   = [];   // 1D array of totals  (parallel to students)
+let averages = [];   // 1D array of averages (parallel to students)
+
+// =====================================================================
+// 2. HELPERS
+// =====================================================================
+function gradeOf(avg) {
+  if (avg >= 90) return { letter: "A", cls: "g-a" };
+  if (avg >= 75) return { letter: "B", cls: "g-b" };
+  if (avg >= 60) return { letter: "C", cls: "g-c" };
+  if (avg >= 40) return { letter: "D", cls: "g-d" };
+  return { letter: "F", cls: "g-f" };
+}
+
+// Recompute totals[] and averages[] from students[].marks[][]
+function recompute() {
+  totals.length = 0;
+  averages.length = 0;
+  for (let i = 0; i < students.length; i++) {
+    let sum = 0;
+    for (let j = 0; j < NUM_SUBJECTS; j++) sum += students[i].marks[j];
+    totals.push(sum);
+    averages.push(sum / NUM_SUBJECTS);
+  }
+}
+
+// =====================================================================
+// 3. ADD / REMOVE / CLEAR
+// =====================================================================
+function addStudent(event) {
+  event.preventDefault();
+  const form = event.target;
+  const name = form.name.value.trim();
+  const marks = [
+    parseInt(form.math.value),
+    parseInt(form.science.value),
+    parseInt(form.english.value)
+  ];
+  if (!name || marks.some(m => isNaN(m) || m < 0 || m > 100)) {
+    alert("Please enter a name and marks between 0 and 100.");
+    return;
+  }
+  students.push({ name, marks });
+  form.reset();
+  render();
+}
+
+function removeStudent(index) {
+  students.splice(index, 1);
+  render();
+}
+
+function clearAll() {
+  if (students.length === 0) return;
+  if (confirm("Remove all students?")) {
+    students = [];
+    render();
+  }
+}
+
+// =====================================================================
+// 4. RENDER — dashboard + table
+// =====================================================================
+function render() {
+  recompute();
+  renderDashboard();
+  renderTable();
+}
+
+function renderDashboard() {
+  const dash = document.getElementById("dashboard");
+  const n = students.length;
+
+  // class average
+  let classAvg = 0;
+  if (n > 0) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += averages[i];
+    classAvg = sum / n;
+  }
+
+  // top scorer
+  let topIdx = -1, topAvg = -Infinity;
+  for (let i = 0; i < n; i++) {
+    if (averages[i] > topAvg) { topAvg = averages[i]; topIdx = i; }
+  }
+
+  // subject-wise averages
+  const subjAvg = SUBJECTS.map((_, j) => {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += students[i].marks[j];
+    return n > 0 ? s / n : 0;
+  });
+
+  const card = (label, value) => `
+    <div class="stat-card">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+    </div>`;
+
+  let html = "";
+  html += card("Class Average", n ? classAvg.toFixed(2) : "—");
+  html += card("Top Scorer",   n ? students[topIdx].name : "—");
+  html += card("Top Average",  n ? topAvg.toFixed(2) : "—");
+  html += card("Students",     n);
+  SUBJECTS.forEach((s, j) => {
+    html += card(s + " Avg", n ? subjAvg[j].toFixed(2) : "—");
+  });
+  dash.innerHTML = html;
+}
+
+function renderTable() {
+  const tbody = document.getElementById("tableBody");
+  const query = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  // find top scorer to highlight
+  let topIdx = -1, topAvg = -Infinity;
+  for (let i = 0; i < averages.length; i++) {
+    if (averages[i] > topAvg) { topAvg = averages[i]; topIdx = i; }
+  }
+
+  if (students.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">
+      No students yet — add one below.</td></tr>`;
+    return;
+  }
+
+  let rows = "";
+  let shown = 0;
+  for (let i = 0; i < students.length; i++) {
+    if (query && !students[i].name.toLowerCase().includes(query)) continue;
+    shown++;
+    const g = gradeOf(averages[i]);
+    const isTop = (i === topIdx);
+    rows += `<tr class="${isTop ? "top-row" : ""}">
+      <td>${isTop ? '<span class="star">★</span> ' : ''}${escapeHtml(students[i].name)}</td>
+      ${students[i].marks.map(m => `<td class="num">${m}</td>`).join("")}
+      <td class="num">${totals[i]}</td>
+      <td class="num">${averages[i].toFixed(2)}</td>
+      <td class="num"><span class="badge ${g.cls}">${g.letter}</span></td>
+      <td class="num">
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:.75rem"
+                onclick="removeStudent(${i})">Remove</button>
+      </td>
+    </tr>`;
+  }
+  if (shown === 0) {
+    rows = `<tr><td colspan="8" class="empty">
+      No student matches "${escapeHtml(query)}".</td></tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+
+// =====================================================================
+// 5. BOOT — seed with sample data
+// =====================================================================
+students = [
+  { name: "Alice", marks: [92, 88, 95] },
+  { name: "Bob",   marks: [55, 62, 48] },
+  { name: "Carol", marks: [78, 81, 74] }
+];
+render();
+</script>
+</body>
+</html>
